@@ -77,7 +77,7 @@ main(int argc, char const* argv[])
 		{
 		case 'h':
 			Usage(argv[0]);
-			return 0;
+			return (0);
 		case 'l':
 			print = true;
 			break;
@@ -88,7 +88,7 @@ main(int argc, char const* argv[])
 			reset = true;
 			break;
 		default:
-			return 1;
+			return (1);
 		}
 	}
 	
@@ -101,7 +101,7 @@ main(int argc, char const* argv[])
 		if (!file)
 		{
 			fprintf(stderr, "err: failed to open data file for writing - %s!\n", path.c_str());
-			return 1;
+			return (1);
 		}
 		
 		data.Reset();
@@ -110,24 +110,24 @@ main(int argc, char const* argv[])
 		fclose(file);
 		if (err)
 		{
-			return 1;
+			return (1);
 		}
 		
-		return 0;
+		return (0);
 	}
 	
 	FILE*	file	= fopen(path.c_str(), "rb");
 	if (!file)
 	{
 		fprintf(stderr, "err: failed to open data file for reading - %s!\n", path.c_str());
-		return 1;
+		return (1);
 	}
 	
 	int32_t	err	= Data::Read(data, file);
 	fclose(file);
 	if (err)
 	{
-		return 1;
+		return (1);
 	}
 	
 	if (print)
@@ -147,6 +147,13 @@ main(int argc, char const* argv[])
 			+ data.m_TotalProgramming
 			+ data.m_TotalStudying;
 		
+		auto	percent	= [total](uint64_t time)
+		{
+			float						exact		= (float)time / total * 100.0f;
+			unsigned long long	rounded	= exact;
+			return (rounded);
+		};
+		
 		printf(
 			"Currently %s\n"
 			"\n"
@@ -158,33 +165,33 @@ main(int argc, char const* argv[])
 			"Time spent studying     %s (%llu%%)\n",
 			statusNames[data.m_Status],
 			waste.c_str(),
-			(long long unsigned)data.m_TotalWaste / total * 100,
+			percent(data.m_TotalWaste),
 			working.c_str(),
-			(long long unsigned)data.m_TotalWorking / total * 100,
+			percent(data.m_TotalWorking),
 			reading.c_str(),
-			(long long unsigned)data.m_TotalReading / total * 100,
+			percent(data.m_TotalReading),
 			writing.c_str(),
-			(long long unsigned)data.m_TotalWriting / total * 100,
+			percent(data.m_TotalWriting),
 			programming.c_str(),
-			(long long unsigned)data.m_TotalProgramming / total * 100,
+			percent(data.m_TotalProgramming),
 			studying.c_str(),
-			(long long unsigned)data.m_TotalStudying / total * 100
+			percent(data.m_TotalStudying)
 		);
 		
-		return 0;
+		return (0);
 	}
 	
 	if (optind + 1 != argc)
 	{
 		fprintf(stderr, "err: missing required positional argument!\n");
-		return 1;
+		return (1);
 	}
 	
 	file = fopen(path.c_str(), "wb");
 	if (!file)
 	{
 		fprintf(stderr, "err: failed to open data file for writing - %s!\n", path.c_str());
-		return 1;
+		return (1);
 	}
 	
 	data.Update();
@@ -220,7 +227,7 @@ main(int argc, char const* argv[])
 	{
 		fprintf(stderr, "err: illegal argument - %s!\n", argv[optind]);
 		fclose(file);
-		return 1;
+		return (1);
 	}
 	
 	err = data.Write(file);
@@ -228,7 +235,7 @@ main(int argc, char const* argv[])
 	if (err)
 	{
 		fprintf(stderr, "err: failed to write to data file!\n");
-		return 1;
+		return (1);
 	}
 }
 
@@ -238,9 +245,9 @@ Data::Read(OUT Data& data, FILE* file)
 	if (fread(&data, sizeof(data), 1, file) != 1)
 	{
 		fprintf(stderr, "err: failed to read data file!\n");
-		return 1;
+		return (1);
 	}
-	return 0;
+	return (0);
 }
 
 int32_t
@@ -249,9 +256,9 @@ Data::Write(FILE* file)
 	if (fwrite(this, sizeof(*this), 1, file) != 1)
 	{
 		fprintf(stderr, "err: failed to write data file!\n");
-		return 1;
+		return (1);
 	}
-	return 0;
+	return (0);
 }
 
 void
@@ -297,24 +304,30 @@ FormatTime(uint64_t time, bool precise)
 	
 	if (precise)
 	{
-		return std::format(
+		std::string	format	= std::format(
 			"{}:{:0>2}:{:0>2}.{:0>3}",
 			hours,
 			minutes,
 			seconds,
 			milli
 		);
+		return (format);
 	}
 	else
 	{
-		return std::format("{}:{:0>2}", hours, minutes);
+		std::string	format	= std::format("{}:{:0>2}", hours, minutes);
+		return (format);
 	}
 }
 
 static std::filesystem::path
 DataPath()
 {
-	return std::filesystem::path{"/home"} / getlogin() / DATA_FILE;
+	std::filesystem::path	path	{"/home"};
+	path /= getlogin();
+	path /= DATA_FILE;
+	
+	return (path);
 }
 
 static void
@@ -350,5 +363,8 @@ UnixMicro()
 {
 	timeval	timeData	{};
 	gettimeofday(&timeData, nullptr);
-	return (uint64_t)timeData.tv_sec * 1000000 + (uint64_t)timeData.tv_usec;
+	
+	uint64_t	timestamp	= (uint64_t)timeData.tv_sec * 1000000 + (uint64_t)timeData.tv_usec;
+	
+	return (timestamp);
 }
